@@ -1,0 +1,4 @@
+max-length: 4
+max-width: 4
+cool-down: 30000 #in millisecond
+max-timeout: 10000 #in millisecond
