@@ -1,6 +1,7 @@
 package io.github.lumine1909.cartography;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -10,6 +11,7 @@ import java.util.Map;
 
 public final class Cartography extends JavaPlugin {
     public static Map<Player, Long> mapCoolDown = new HashMap<>();
+    public static Server server;
     public static int maxLength;
     public static int maxWidth;
     public static int coolDown;
@@ -27,6 +29,7 @@ public final class Cartography extends JavaPlugin {
         coolDown = getConfig().getInt("cool-down", 30000);
         maxTimeout = getConfig().getInt("max-timeout", 10000);
         instance = this;
+        server = this.getServer();
         getLogger().info("插件加载完成, 作者: Lumine1909");
     }
     @Override

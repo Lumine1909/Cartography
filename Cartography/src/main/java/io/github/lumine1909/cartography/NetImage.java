@@ -1,54 +1,68 @@
 package io.github.lumine1909.cartography;
 
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
+import net.minecraft.world.item.ItemWorldMap;
+import net.minecraft.world.level.saveddata.maps.WorldMap;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.MapMeta;
-import org.bukkit.map.MapCanvas;
-import org.bukkit.map.MapRenderer;
-import org.bukkit.map.MapView;
+import org.bukkit.map.MapPalette;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.List;
 
 public class NetImage extends BukkitRunnable {
+    public static String serverVersion;
     int length, width;
     URL url;
     Player player;
     public NetImage(String url, Player player, int mapLength, int mapWidth) throws IOException {
+        serverVersion = Cartography.server.getClass().getPackageName();
         this.url = new URL(url);
         this.player = player;
         this.length = mapLength;
         this.width = mapWidth;
     }
+    private WorldMap createMap(World world) {
+        try {
+            Class<?> craftWorld = Class.forName(serverVersion + ".CraftWorld");
+            Field f = craftWorld.getDeclaredField("world");
+            f.setAccessible(true);
+            Object result = f.get(world);
+            net.minecraft.world.level.World minecraftWorld = (net.minecraft.world.level.World) result;
+            int newId = ItemWorldMap.a(minecraftWorld, minecraftWorld.n_().a(), minecraftWorld.n_().c(), 3, false, false, minecraftWorld.ab());
+            return minecraftWorld.a(ItemWorldMap.a(newId));
+        } catch (Exception e) {
+            return null;
+        }
+    }
     public void genSingleImage(Player player, BufferedImage image, int i, int j) {
         try {
-            MapView mapView = Bukkit.createMap(player.getWorld());
-            mapView.addRenderer(new MapRenderer() {
-                @Override
-                public void render(@NotNull MapView mapView, @NotNull MapCanvas mapCanvas, @NotNull Player player) {
-                    mapCanvas.drawImage(0, 0, image);
+            WorldMap map = createMap(player.getWorld());
+            map.mapView.setLocked(true);
+            byte[] bytes = MapPalette.imageToBytes(image);
+            for(int x = 0; x < image.getWidth(null); ++x) {
+                for(int y = 0; y < image.getHeight(null); ++y) {
+                    byte color = bytes[y*image.getWidth(null)+x];
+                    map.a(x, y, color);
                 }
-            });
+            }
             ItemStack is = new ItemStack(Material.FILLED_MAP);
-            mapView.setScale(MapView.Scale.CLOSEST);
             MapMeta meta = (MapMeta) is.getItemMeta();
-            meta.setMapView(mapView);
-            Component lore = Component.text(ChatColor.WHITE + "pos: " + i + "," + j);
+            meta.setMapView(map.mapView);
+            Component lore = Component.text(ChatColor.GREEN + "pos: " + i + "," + j);
             meta.lore(List.of(lore));
             is.setItemMeta(meta);
             player.getInventory().addItem(is);

@@ -59,7 +59,11 @@
         </repository>
         <repository>
             <id>sonatype</id>
-            <url>https://oss.sonatype.org/content/groups/public/</url>
+            <url>https://oss.so natype.org/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>nms-local</id>
+            <url>https://repo.codemc.io/repository/nms-local/</url>
         </repository>
     </repositories>
 
@@ -69,6 +73,11 @@
             <artifactId>paper-api</artifactId>
             <version>1.17.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-server</artifactId>
+            <version>1.19.4-R0.1-20230601.024610-98</version>
         </dependency>
     </dependencies>
 </project>
