@@ -91,7 +91,6 @@ public class NetImage extends BukkitRunnable {
             InputStream inputStream = connection.getInputStream();
             BufferedImage image = ImageIO.read(inputStream);
             Image img = image.getScaledInstance(128*length, 128*width, Image.SCALE_AREA_AVERAGING);
-
             image = toBuffer(img);
             for (int i=0; i<width; i++) {
                 for (int j=0; j<length; j++) {

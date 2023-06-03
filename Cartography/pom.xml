@@ -6,7 +6,7 @@
 
     <groupId>io.github.lumine1909</groupId>
     <artifactId>Cartography</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
     <packaging>jar</packaging>
 
     <name>Cartography</name>
@@ -78,6 +78,7 @@
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-server</artifactId>
             <version>1.19.4-R0.1-20230601.024610-98</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
