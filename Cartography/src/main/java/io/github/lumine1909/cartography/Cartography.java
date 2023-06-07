@@ -5,28 +5,35 @@ import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 public final class Cartography extends JavaPlugin {
     public static Map<Player, Long> mapCoolDown = new HashMap<>();
+
+
+    public static Cartography instance;
+    public static YamlConfiguration translation;
     public static Server server;
     public static int maxLength;
     public static int maxWidth;
     public static int coolDown;
     public static int maxTimeout;
-
     public static String serverVersion;
 
     public static int version;
-
-    public static Cartography instance;
     @Override
     public void onLoad() {
         instance = this;
         server = this.getServer();
+        saveResource("translation.yml", false);
+        saveResource("translation_zh_CN.yml", false);
+        translation = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "translation.yml"));
         serverVersion = Cartography.server.getClass().getPackage().getName();
         version = Integer.parseInt(serverVersion.split("\\.")[3].split("_")[1]);
         saveDefaultConfig();
@@ -35,7 +42,7 @@ public final class Cartography extends JavaPlugin {
     @Override
     public void onEnable() {
         if (version < 13) {
-            getLogger().warning("不支持的版本! 此插件最低可用于1.13");
+            getLogger().warning(translation.getString("unsupported", "Unsupported version! This plugin is at least available for version 1.13"));
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
@@ -43,22 +50,22 @@ public final class Cartography extends JavaPlugin {
         maxWidth = getConfig().getInt("max-width", 4);
         coolDown = getConfig().getInt("cool-down", 30000);
         maxTimeout = getConfig().getInt("max-timeout", 10000);
-        getLogger().info("插件加载完成, 作者: Lumine1909");
+        getLogger().info(translation.getString("done", "Plugin loading completed, author: Lumine1909"));
     }
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "只有玩家才能使用该命令");
+            sender.sendMessage(ChatColor.RED + translation.getString("player-check", "Only players can use this command!"));
             return true;
         }
         Player player = (Player) sender;
         if (!player.hasPermission("cartography.getimage")) {
-            sender.sendMessage(ChatColor.RED + "你没有权限!");
+            sender.sendMessage(ChatColor.RED + translation.getString("no-permission", "You do not have permission to execute this command!"));
             return true;
         }
         if (args.length < 1 || args.length > 3) {
-            sender.sendMessage(ChatColor.RED + "命令语法不正确!");
-            sender.sendMessage(ChatColor.RED + "请使用/getimage <URL> [Height] [Width]");
+            sender.sendMessage(ChatColor.RED + translation.getString("incorrect-usage", "Incorrect command usage!"));
+            sender.sendMessage(ChatColor.RED + translation.getString("usage", "Please use /getimage <URL> [Height] [Width]"));
             return true;
         }
         try {
@@ -71,23 +78,23 @@ public final class Cartography extends JavaPlugin {
                 width = Integer.parseInt(args[2]);
             }
             if (length > maxLength && !player.hasPermission("cartography.bypass")) {
-                player.sendMessage(ChatColor.RED + "图片长度过大, 最大为" + maxLength);
+                player.sendMessage(ChatColor.RED + translation.getString("length-too-large", "The length of the image is too large, with a maximum of ") + maxLength);
                 return true;
             }
             if (width > maxWidth && !player.hasPermission("cartography.bypass")) {
-                player.sendMessage(ChatColor.RED + "图片宽度过大, 最大为" + maxWidth);
+                player.sendMessage(ChatColor.RED + translation.getString("width-too-large", "The length of the image is too large, with a maximum of ") + maxWidth);
                 return true;
             }
             if (mapCoolDown.containsKey(player) && !player.hasPermission("cartography.bypass")) {
                 if (System.currentTimeMillis() - mapCoolDown.get(player) < coolDown) {
-                    player.sendMessage(ChatColor.RED + "生成冷却时间剩余: " + (coolDown-System.currentTimeMillis()+mapCoolDown.get(player))/1000 + "秒!");
+                    player.sendMessage(ChatColor.RED + translation.getString("cool-down", "Remaining cooling time for generation: ") + (coolDown-System.currentTimeMillis()+mapCoolDown.get(player))/1000 + "s!");
                     return true;
                 }
             }
             new NetImage(args[0], player, length, width).runTaskAsynchronously(instance);
         } catch (Exception e) {
             e.printStackTrace();
-            sender.sendMessage(ChatColor.RED + "URL错误或无法访问!");
+            player.sendMessage(ChatColor.RED + translation.getString("url-error", "URL error or inaccessible!"));
             return true;
         }
         return true;

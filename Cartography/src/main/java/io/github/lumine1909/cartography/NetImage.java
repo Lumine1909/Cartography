@@ -27,8 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.github.lumine1909.cartography.Cartography.serverVersion;
-import static io.github.lumine1909.cartography.Cartography.version;
+import static io.github.lumine1909.cartography.Cartography.*;
 
 public class NetImage extends BukkitRunnable {
     int length, width;
@@ -172,10 +171,10 @@ public class NetImage extends BukkitRunnable {
                     genSingleImage(player, tempImg, i, j);
                 }
             }
-            player.sendMessage(ChatColor.AQUA + "地图画生成完成!" + "总共 " + length*width + " 张");
+            player.sendMessage(ChatColor.AQUA + translation.getString("gen-finish", "Map generation completed! %total% in total").replaceAll("%total%", String.valueOf(length*width)));
             Cartography.mapCoolDown.put(player, System.currentTimeMillis());
         } catch (Exception e) {
-            player.sendMessage(ChatColor.RED + "URL错误或无法访问!");
+            player.sendMessage(ChatColor.RED + translation.getString("url-error", "URL error or inaccessible!"));
         }
     }
 }
