@@ -1,5 +1,6 @@
 package io.github.lumine1909.cartography;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
@@ -16,28 +17,41 @@ public final class Cartography extends JavaPlugin {
     public static int maxWidth;
     public static int coolDown;
     public static int maxTimeout;
+
+    public static String serverVersion;
+
+    public static int version;
+
     public static Cartography instance;
     @Override
     public void onLoad() {
+        instance = this;
+        server = this.getServer();
+        serverVersion = Cartography.server.getClass().getPackage().getName();
+        version = Integer.parseInt(serverVersion.split("\\.")[3].split("_")[1]);
         saveDefaultConfig();
     }
 
     @Override
     public void onEnable() {
+        if (version < 13) {
+            getLogger().warning("不支持的版本! 此插件最低可用于1.13");
+            Bukkit.getPluginManager().disablePlugin(this);
+            return;
+        }
         maxLength = getConfig().getInt("max-length", 4);
         maxWidth = getConfig().getInt("max-width", 4);
         coolDown = getConfig().getInt("cool-down", 30000);
         maxTimeout = getConfig().getInt("max-timeout", 10000);
-        instance = this;
-        server = this.getServer();
         getLogger().info("插件加载完成, 作者: Lumine1909");
     }
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player player)) {
+        if (!(sender instanceof Player)) {
             sender.sendMessage(ChatColor.RED + "只有玩家才能使用该命令");
             return true;
         }
+        Player player = (Player) sender;
         if (!player.hasPermission("cartography.getimage")) {
             sender.sendMessage(ChatColor.RED + "你没有权限!");
             return true;
@@ -60,7 +74,7 @@ public final class Cartography extends JavaPlugin {
                 player.sendMessage(ChatColor.RED + "图片长度过大, 最大为" + maxLength);
                 return true;
             }
-            if (length > maxWidth && !player.hasPermission("cartography.bypass")) {
+            if (width > maxWidth && !player.hasPermission("cartography.bypass")) {
                 player.sendMessage(ChatColor.RED + "图片宽度过大, 最大为" + maxWidth);
                 return true;
             }

@@ -1,16 +1,16 @@
 package io.github.lumine1909.cartography;
 
-import net.kyori.adventure.text.Component;
 import net.minecraft.world.item.ItemWorldMap;
 import net.minecraft.world.level.saveddata.maps.WorldMap;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapPalette;
+import org.bukkit.map.MapView;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.World;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -18,56 +18,130 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import static io.github.lumine1909.cartography.Cartography.serverVersion;
+import static io.github.lumine1909.cartography.Cartography.version;
+
 public class NetImage extends BukkitRunnable {
-    public static String serverVersion;
     int length, width;
     URL url;
     Player player;
     public NetImage(String url, Player player, int mapLength, int mapWidth) throws IOException {
-        serverVersion = Cartography.server.getClass().getPackageName();
         this.url = new URL(url);
         this.player = player;
         this.length = mapLength;
         this.width = mapWidth;
     }
-    private WorldMap createMap(World world) {
-        try {
-            Class<?> craftWorld = Class.forName(serverVersion + ".CraftWorld");
-            Field f = craftWorld.getDeclaredField("world");
-            f.setAccessible(true);
-            Object result = f.get(world);
-            net.minecraft.world.level.World minecraftWorld = (net.minecraft.world.level.World) result;
-            int newId = ItemWorldMap.a(minecraftWorld, minecraftWorld.n_().a(), minecraftWorld.n_().c(), 3, false, false, minecraftWorld.ab());
-            return minecraftWorld.a(ItemWorldMap.a(newId));
-        } catch (Exception e) {
-            return null;
-        }
-    }
+
     public void genSingleImage(Player player, BufferedImage image, int i, int j) {
-        try {
-            WorldMap map = createMap(player.getWorld());
-            map.mapView.setLocked(true);
-            byte[] bytes = MapPalette.imageToBytes(image);
-            for(int x = 0; x < image.getWidth(null); ++x) {
-                for(int y = 0; y < image.getHeight(null); ++y) {
-                    byte color = bytes[y*image.getWidth(null)+x];
-                    map.a(x, y, color);
+        if (version >= 17) {
+            try {
+                Class<?> craftWorld = Class.forName(serverVersion + ".CraftWorld");
+                Field f = craftWorld.getDeclaredField("world");
+                f.setAccessible(true);
+                World world = player.getWorld();
+                Object result = f.get(world);
+                net.minecraft.world.level.World minecraftWorld = (net.minecraft.world.level.World) result;
+                int newId = ItemWorldMap.a(minecraftWorld, minecraftWorld.n_().a(), minecraftWorld.n_().c(), 3, false, false, minecraftWorld.ab());
+                WorldMap map = minecraftWorld.a(ItemWorldMap.a(newId));
+                Class<?> nmsWorldMap = map.getClass();
+                Field mapView = nmsWorldMap.getDeclaredField("mapView");
+                mapView.setAccessible(true);
+                MapView view = (MapView) mapView.get(map);
+                byte[] bytes = MapPalette.imageToBytes(image);
+                for (int x = 0; x < 128; ++x) {
+                    for (int y = 0; y < 128; ++y) {
+                        byte color = bytes[x+y*128];
+                        map.a(x, y, color);
+                    }
                 }
+                try {
+                    Field lock = (Field) Arrays.stream(nmsWorldMap.getFields()).filter(x -> x.getType().equals(boolean.class)).toArray()[3];
+                    lock.set(map, true);
+                } catch (Exception ignored) {
+
+                }
+                try {
+                    Class<?> nmsMapView = Class.forName(serverVersion + ".map.CraftMapView");
+                    Method method = nmsMapView.getMethod("setLocked", boolean.class);
+                    method.invoke(view, true);
+                } catch (Exception ignored) {
+                }
+                ItemStack is = new ItemStack(Material.FILLED_MAP);
+                MapMeta meta = (MapMeta) is.getItemMeta();
+                meta.setMapView(view);
+                List<String> var0 = new ArrayList<>();
+                var0.add(ChatColor.GREEN + "pos: " + i + "," + j);
+                meta.setLore(var0);
+                is.setItemMeta(meta);
+                player.getInventory().addItem(is);
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            ItemStack is = new ItemStack(Material.FILLED_MAP);
-            MapMeta meta = (MapMeta) is.getItemMeta();
-            meta.setMapView(map.mapView);
-            Component lore = Component.text(ChatColor.GREEN + "pos: " + i + "," + j);
-            meta.lore(List.of(lore));
-            is.setItemMeta(meta);
-            player.getInventory().addItem(is);
-        } catch (Exception e) {
-            e.printStackTrace();
+        }
+        else {
+            try {
+                String var0 = serverVersion.split("\\.")[3];
+                Class<?> nmsItemStack = Class.forName("net.minecraft.server." + var0 + ".ItemStack");
+                Class<?> nmsWorld = Class.forName("net.minecraft.server." + var0 + ".World");
+                Constructor<?> isc = (Constructor<?>) Arrays.stream(nmsItemStack.getConstructors()).filter(x -> x.getParameterCount() == 2).toArray()[0];
+                isc.setAccessible(true);
+                Class<?> nmsItems = Class.forName("net.minecraft.server." + var0 + ".Items");
+                Field mapField = nmsItems.getDeclaredField("FILLED_MAP");
+                mapField.setAccessible(true);
+                Object itemMap = mapField.get(null);
+                Object nmsStack = isc.newInstance(itemMap, 1);
+                Class<?> nmsIwm = Class.forName("net.minecraft.server." + var0 + ".ItemWorldMap");
+                Class<?> craftWorld = Class.forName(serverVersion + ".CraftWorld");
+                Field worldServer = craftWorld.getDeclaredField("world");
+                worldServer.setAccessible(true);
+                Object result = worldServer.get(player.getWorld());
+                Method getSaved = nmsIwm.getMethod("getSavedMap", nmsItemStack, nmsWorld);
+                getSaved.setAccessible(true);
+                Object worldmap = getSaved.invoke(null, nmsStack, result);
+                byte[] bytes = MapPalette.imageToBytes(image);
+                Class<?> nmsWorldMap = Class.forName("net.minecraft.server." + var0 + ".WorldMap");
+                Field colors = nmsWorldMap.getDeclaredField("colors");
+                colors.setAccessible(true);
+                byte[] temp = (byte[]) colors.get(worldmap);
+                Method flagDirty = nmsWorldMap.getMethod("flagDirty", int.class, int.class);
+                for (int x = 0; x < 128; ++x) {
+                    for (int y = 0; y < 128; ++y) {
+                        temp[x+128*y] = bytes[x+128*y];
+                        flagDirty.invoke(worldmap, x, y);
+                    }
+                }
+
+                Field mapView = nmsWorldMap.getDeclaredField("mapView");
+                mapView.setAccessible(true);
+                MapView view = (MapView) mapView.get(worldmap);
+                try {
+                    Class<?> nmsMapView = Class.forName(serverVersion + ".map.CraftMapView");
+                    Method method = nmsMapView.getMethod("setLocked", boolean.class);
+                    method.invoke(view, true);
+                } catch (Exception ignored) {
+                }
+                view.setScale(MapView.Scale.CLOSEST);
+                ItemStack is = new ItemStack(Material.FILLED_MAP);
+                MapMeta meta = (MapMeta) is.getItemMeta();
+                meta.setMapView(view);
+                List<String> var1 = new ArrayList<>();
+                var1.add(ChatColor.GREEN + "pos: " + i + "," + j);
+                meta.setLore(var1);
+                is.setItemMeta(meta);
+                player.getInventory().addItem(is);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

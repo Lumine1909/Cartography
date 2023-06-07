@@ -2,7 +2,7 @@ name: Cartography
 version: '${project.version}'
 main: io.github.lumine1909.cartography.Cartography
 authors: [Lumine1909]
-api-version: 1.17
+api-version: 1.13
 commands:
   getimage:
     usage: /getimage <URL> [Height] [Width]
