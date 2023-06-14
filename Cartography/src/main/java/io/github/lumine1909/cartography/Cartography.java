@@ -10,7 +10,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class Cartography extends JavaPlugin {
@@ -27,6 +29,7 @@ public final class Cartography extends JavaPlugin {
     public static String serverVersion;
 
     public static int version;
+    public static boolean fixMap;
     @Override
     public void onLoad() {
         instance = this;
@@ -46,10 +49,13 @@ public final class Cartography extends JavaPlugin {
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
+        server.getPluginManager().registerEvents(new EventListener(), this);
         maxLength = getConfig().getInt("max-length", 4);
         maxWidth = getConfig().getInt("max-width", 4);
         coolDown = getConfig().getInt("cool-down", 30000);
         maxTimeout = getConfig().getInt("max-timeout", 10000);
+        maxWidth = getConfig().getInt("max-width", 4);
+        fixMap = getConfig().getBoolean("map-frame-fix", true);
         getLogger().info(translation.getString("done", "Plugin loading completed, author: Lumine1909"));
     }
     @Override
@@ -63,19 +69,19 @@ public final class Cartography extends JavaPlugin {
             sender.sendMessage(ChatColor.RED + translation.getString("no-permission", "You do not have permission to execute this command!"));
             return true;
         }
-        if (args.length < 1 || args.length > 3) {
+        if (args.length < 2 || args.length > 4) {
             sender.sendMessage(ChatColor.RED + translation.getString("incorrect-usage", "Incorrect command usage!"));
             sender.sendMessage(ChatColor.RED + translation.getString("usage", "Please use /getimage <URL> [Height] [Width]"));
             return true;
         }
         try {
             int length, width;
-            if (args.length == 1) {
+            if (args.length == 2) {
                 length = 1;
                 width = 1;
             } else {
-                length = Integer.parseInt(args[1]);
-                width = Integer.parseInt(args[2]);
+                length = Integer.parseInt(args[2]);
+                width = Integer.parseInt(args[3]);
             }
             if (length > maxLength && !player.hasPermission("cartography.bypass")) {
                 player.sendMessage(ChatColor.RED + translation.getString("length-too-large", "The length of the image is too large, with a maximum of ") + maxLength);
@@ -91,12 +97,22 @@ public final class Cartography extends JavaPlugin {
                     return true;
                 }
             }
-            new NetImage(args[0], player, length, width).runTaskAsynchronously(instance);
+            new NetImage(args[1], player, length, width, args[0]).runTaskAsynchronously(instance);
         } catch (Exception e) {
             e.printStackTrace();
             player.sendMessage(ChatColor.RED + translation.getString("url-error", "URL error or inaccessible!"));
             return true;
         }
         return true;
+    }
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length <= 1) {
+            List<String> var = new ArrayList<>();
+            var.add("normal");
+            if (sender.hasPermission("cartography.shulker")) var.add("shulker");
+            //if (sender.hasPermission("cartography.compress")) var.add("compress");
+            return var;
+        }
+        return null;
     }
 }

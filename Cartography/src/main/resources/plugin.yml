@@ -5,10 +5,14 @@ authors: [Lumine1909]
 api-version: 1.13
 commands:
   getimage:
-    usage: /getimage <URL> [Height] [Width]
+    usage: /getimage <Method> <URL> [Height] [Width]
     permission: cartography.getimage
 permissions:
   cartography.getimage:
     default: true
   cartography.bypass:
+    default: op
+  cartography.shulker:
+    default: op
+  cartography.compress:
     default: op

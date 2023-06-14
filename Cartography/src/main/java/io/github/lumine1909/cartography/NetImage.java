@@ -33,56 +33,38 @@ public class NetImage extends BukkitRunnable {
     int length, width;
     URL url;
     Player player;
-    public NetImage(String url, Player player, int mapLength, int mapWidth) throws IOException {
+    List<ItemStack> stackList = new ArrayList<>();
+    String method;
+    public NetImage(String url, Player player, int mapLength, int mapWidth, String method) throws IOException {
         this.url = new URL(url);
         this.player = player;
         this.length = mapLength;
         this.width = mapWidth;
+        this.method = method;
     }
 
     public void genSingleImage(Player player, BufferedImage image, int i, int j) {
+        MapView view = server.createMap(player.getWorld());
+        view.setScale(MapView.Scale.CLOSEST);
+        try {
+            Class<?> craftMapView = Class.forName(serverVersion + ".map.CraftMapView");
+            Method method = craftMapView.getMethod("setLocked", boolean.class);
+            method.invoke(view, true);
+        } catch (Exception ignored) {
+        }
         if (version >= 17) {
             try {
-                Class<?> craftWorld = Class.forName(serverVersion + ".CraftWorld");
-                Field f = craftWorld.getDeclaredField("world");
-                f.setAccessible(true);
-                World world = player.getWorld();
-                Object result = f.get(world);
-                net.minecraft.world.level.World minecraftWorld = (net.minecraft.world.level.World) result;
-                int newId = ItemWorldMap.a(minecraftWorld, minecraftWorld.n_().a(), minecraftWorld.n_().c(), 3, false, false, minecraftWorld.ab());
-                WorldMap map = minecraftWorld.a(ItemWorldMap.a(newId));
-                Class<?> nmsWorldMap = map.getClass();
-                Field mapView = nmsWorldMap.getDeclaredField("mapView");
-                mapView.setAccessible(true);
-                MapView view = (MapView) mapView.get(map);
+                Class<?> craftMapView = Class.forName(serverVersion + ".map.CraftMapView");
+                Field mapField = craftMapView.getDeclaredField("worldMap");
+                mapField.setAccessible(true);
+                WorldMap worldMap = (WorldMap) mapField.get(view);
                 byte[] bytes = MapPalette.imageToBytes(image);
                 for (int x = 0; x < 128; ++x) {
                     for (int y = 0; y < 128; ++y) {
                         byte color = bytes[x+y*128];
-                        map.a(x, y, color);
+                        worldMap.a(x, y, color);
                     }
                 }
-                try {
-                    Field lock = (Field) Arrays.stream(nmsWorldMap.getFields()).filter(x -> x.getType().equals(boolean.class)).toArray()[3];
-                    lock.set(map, true);
-                } catch (Exception ignored) {
-
-                }
-                try {
-                    Class<?> nmsMapView = Class.forName(serverVersion + ".map.CraftMapView");
-                    Method method = nmsMapView.getMethod("setLocked", boolean.class);
-                    method.invoke(view, true);
-                } catch (Exception ignored) {
-                }
-                ItemStack is = new ItemStack(Material.FILLED_MAP);
-                MapMeta meta = (MapMeta) is.getItemMeta();
-                meta.setMapView(view);
-                List<String> var0 = new ArrayList<>();
-                var0.add(ChatColor.GREEN + "pos: " + i + "," + j);
-                meta.setLore(var0);
-                is.setItemMeta(meta);
-                player.getInventory().addItem(is);
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -90,58 +72,35 @@ public class NetImage extends BukkitRunnable {
         else {
             try {
                 String var0 = serverVersion.split("\\.")[3];
-                Class<?> nmsItemStack = Class.forName("net.minecraft.server." + var0 + ".ItemStack");
-                Class<?> nmsWorld = Class.forName("net.minecraft.server." + var0 + ".World");
-                Constructor<?> isc = (Constructor<?>) Arrays.stream(nmsItemStack.getConstructors()).filter(x -> x.getParameterCount() == 2).toArray()[0];
-                isc.setAccessible(true);
-                Class<?> nmsItems = Class.forName("net.minecraft.server." + var0 + ".Items");
-                Field mapField = nmsItems.getDeclaredField("FILLED_MAP");
+                Class<?> craftMapView = Class.forName(serverVersion + ".map.CraftMapView");
+                Field mapField = craftMapView.getDeclaredField("worldMap");
                 mapField.setAccessible(true);
-                Object itemMap = mapField.get(null);
-                Object nmsStack = isc.newInstance(itemMap, 1);
-                Class<?> nmsIwm = Class.forName("net.minecraft.server." + var0 + ".ItemWorldMap");
-                Class<?> craftWorld = Class.forName(serverVersion + ".CraftWorld");
-                Field worldServer = craftWorld.getDeclaredField("world");
-                worldServer.setAccessible(true);
-                Object result = worldServer.get(player.getWorld());
-                Method getSaved = nmsIwm.getMethod("getSavedMap", nmsItemStack, nmsWorld);
-                getSaved.setAccessible(true);
-                Object worldmap = getSaved.invoke(null, nmsStack, result);
+                Object worldMap = mapField.get(view);
                 byte[] bytes = MapPalette.imageToBytes(image);
                 Class<?> nmsWorldMap = Class.forName("net.minecraft.server." + var0 + ".WorldMap");
                 Field colors = nmsWorldMap.getDeclaredField("colors");
                 colors.setAccessible(true);
-                byte[] temp = (byte[]) colors.get(worldmap);
+                byte[] temp = (byte[]) colors.get(worldMap);
                 Method flagDirty = nmsWorldMap.getMethod("flagDirty", int.class, int.class);
                 for (int x = 0; x < 128; ++x) {
                     for (int y = 0; y < 128; ++y) {
-                        temp[x+128*y] = bytes[x+128*y];
-                        flagDirty.invoke(worldmap, x, y);
+                        temp[x + 128 * y] = bytes[x + 128 * y];
+                        flagDirty.invoke(worldMap, x, y);
                     }
                 }
-
-                Field mapView = nmsWorldMap.getDeclaredField("mapView");
-                mapView.setAccessible(true);
-                MapView view = (MapView) mapView.get(worldmap);
-                try {
-                    Class<?> nmsMapView = Class.forName(serverVersion + ".map.CraftMapView");
-                    Method method = nmsMapView.getMethod("setLocked", boolean.class);
-                    method.invoke(view, true);
-                } catch (Exception ignored) {
-                }
-                view.setScale(MapView.Scale.CLOSEST);
-                ItemStack is = new ItemStack(Material.FILLED_MAP);
-                MapMeta meta = (MapMeta) is.getItemMeta();
-                meta.setMapView(view);
-                List<String> var1 = new ArrayList<>();
-                var1.add(ChatColor.GREEN + "pos: " + i + "," + j);
-                meta.setLore(var1);
-                is.setItemMeta(meta);
-                player.getInventory().addItem(is);
+                colors.set(worldMap, temp);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+        ItemStack is = new ItemStack(Material.FILLED_MAP);
+        MapMeta meta = (MapMeta) is.getItemMeta();
+        meta.setMapView(view);
+        List<String> var1 = new ArrayList<>();
+        var1.add(ChatColor.GREEN + "pos: " + i + "," + j);
+        meta.setLore(var1);
+        is.setItemMeta(meta);
+        stackList.add(is);
     }
 
     private static BufferedImage toBuffer(Image image) {
@@ -171,8 +130,7 @@ public class NetImage extends BukkitRunnable {
                     genSingleImage(player, tempImg, i, j);
                 }
             }
-            player.sendMessage(ChatColor.AQUA + translation.getString("gen-finish", "Map generation completed! %total% in total").replaceAll("%total%", String.valueOf(length*width)));
-            Cartography.mapCoolDown.put(player, System.currentTimeMillis());
+            new Packager(player, stackList, method);
         } catch (Exception e) {
             player.sendMessage(ChatColor.RED + translation.getString("url-error", "URL error or inaccessible!"));
         }
