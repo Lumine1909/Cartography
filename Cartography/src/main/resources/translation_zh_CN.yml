@@ -9,4 +9,3 @@ width-too-large: "图片宽度过大, 最大为"
 cool-down: "生成冷却时间剩余: "
 url-error: "URL错误或无法访问!"
 gen-finish: "地图画生成完成! 总共 %total% 张"
-

@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,9 +28,12 @@ public final class Cartography extends JavaPlugin {
     public static int coolDown;
     public static int maxTimeout;
     public static String serverVersion;
+    public static boolean isLogging;
 
     public static int version;
     public static boolean fixMap;
+    public static YamlConfiguration logConfig;
+    public static File logFile;
     @Override
     public void onLoad() {
         instance = this;
@@ -56,6 +60,17 @@ public final class Cartography extends JavaPlugin {
         maxTimeout = getConfig().getInt("max-timeout", 10000);
         maxWidth = getConfig().getInt("max-width", 4);
         fixMap = getConfig().getBoolean("map-frame-fix", true);
+        isLogging = getConfig().getBoolean("enable-log", true);
+        if (isLogging) {
+            logFile = new File(getDataFolder(), "map.log");
+            if (!logFile.exists()) {
+                try {
+                    logFile.createNewFile();
+                } catch (IOException ignored) {
+                }
+            }
+            logConfig = YamlConfiguration.loadConfiguration(logFile);
+        }
         getLogger().info(translation.getString("done", "Plugin loading completed, author: Lumine1909"));
     }
     @Override

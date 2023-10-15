@@ -7,17 +7,21 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.github.lumine1909.cartography.Cartography.translation;
+import static io.github.lumine1909.cartography.Cartography.*;
 
 public class Packager {
     private final Player player;
     private final List<ItemStack> stackList;
-    public Packager(Player player, List<ItemStack> stackList, String arg) {
+    public Packager(Player player, List<ItemStack> stackList, String arg) throws IOException {
         this.player = player;
         this.stackList = stackList;
+        if (isLogging) {
+            logConfig.save(logFile);
+        }
         switch (arg) {
             case "normal" : normalPackage();break;
             case "shulker" : shulkerPackage();break;

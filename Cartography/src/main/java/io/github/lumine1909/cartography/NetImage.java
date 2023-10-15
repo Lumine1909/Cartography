@@ -1,6 +1,5 @@
 package io.github.lumine1909.cartography;
 
-import net.minecraft.world.item.ItemWorldMap;
 import net.minecraft.world.level.saveddata.maps.WorldMap;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -10,7 +9,6 @@ import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.MapPalette;
 import org.bukkit.map.MapView;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.World;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -18,13 +16,11 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static io.github.lumine1909.cartography.Cartography.*;
@@ -44,35 +40,37 @@ public class NetImage extends BukkitRunnable {
     }
 
     public void genSingleImage(Player player, BufferedImage image, int i, int j) {
-        MapView view = server.createMap(player.getWorld());
+        MapView view = Cartography.server.createMap(player.getWorld());
         view.setScale(MapView.Scale.CLOSEST);
+
+        Class craftMapView;
         try {
-            Class<?> craftMapView = Class.forName(serverVersion + ".map.CraftMapView");
-            Method method = craftMapView.getMethod("setLocked", boolean.class);
+            craftMapView = Class.forName(Cartography.serverVersion + ".map.CraftMapView");
+            Method method = craftMapView.getMethod("setLocked", Boolean.TYPE);
             method.invoke(view, true);
-        } catch (Exception ignored) {
+        } catch (Exception var17) {
         }
-        if (version >= 17) {
+
+        if (Cartography.version >= 17) {
             try {
-                Class<?> craftMapView = Class.forName(serverVersion + ".map.CraftMapView");
+                craftMapView = Class.forName(Cartography.serverVersion + ".map.CraftMapView");
                 Field mapField = craftMapView.getDeclaredField("worldMap");
                 mapField.setAccessible(true);
-                WorldMap worldMap = (WorldMap) mapField.get(view);
+                WorldMap worldMap = (WorldMap)mapField.get(view);
                 byte[] bytes = MapPalette.imageToBytes(image);
-                for (int x = 0; x < 128; ++x) {
-                    for (int y = 0; y < 128; ++y) {
-                        byte color = bytes[x+y*128];
+                for(int x = 0; x < 128; ++x) {
+                    for(int y = 0; y < 128; ++y) {
+                        byte color = bytes[x + y * 128];
                         worldMap.a(x, y, color);
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Exception var19) {
+                var19.printStackTrace();
             }
-        }
-        else {
+        } else {
             try {
-                String var0 = serverVersion.split("\\.")[3];
-                Class<?> craftMapView = Class.forName(serverVersion + ".map.CraftMapView");
+                String var0 = Cartography.serverVersion.split("\\.")[3];
+                craftMapView = Class.forName(Cartography.serverVersion + ".map.CraftMapView");
                 Field mapField = craftMapView.getDeclaredField("worldMap");
                 mapField.setAccessible(true);
                 Object worldMap = mapField.get(view);
@@ -80,29 +78,33 @@ public class NetImage extends BukkitRunnable {
                 Class<?> nmsWorldMap = Class.forName("net.minecraft.server." + var0 + ".WorldMap");
                 Field colors = nmsWorldMap.getDeclaredField("colors");
                 colors.setAccessible(true);
-                byte[] temp = (byte[]) colors.get(worldMap);
-                Method flagDirty = nmsWorldMap.getMethod("flagDirty", int.class, int.class);
-                for (int x = 0; x < 128; ++x) {
-                    for (int y = 0; y < 128; ++y) {
+                byte[] temp = (byte[])colors.get(worldMap);
+                Method flagDirty = nmsWorldMap.getMethod("flagDirty", Integer.TYPE, Integer.TYPE);
+
+                for(int x = 0; x < 128; ++x) {
+                    for(int y = 0; y < 128; ++y) {
                         temp[x + 128 * y] = bytes[x + 128 * y];
                         flagDirty.invoke(worldMap, x, y);
                     }
                 }
+
                 colors.set(worldMap, temp);
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Exception var18) {
+                var18.printStackTrace();
             }
         }
+        if (isLogging) {
+            logConfig.set(String.valueOf(view.getId()), player.getName() + ", url:" + url.toString());
+        }
         ItemStack is = new ItemStack(Material.FILLED_MAP);
-        MapMeta meta = (MapMeta) is.getItemMeta();
+        MapMeta meta = (MapMeta)is.getItemMeta();
         meta.setMapView(view);
-        List<String> var1 = new ArrayList<>();
+        List<String> var1 = new ArrayList();
         var1.add(ChatColor.GREEN + "pos: " + i + "," + j);
         meta.setLore(var1);
         is.setItemMeta(meta);
-        stackList.add(is);
+        this.stackList.add(is);
     }
-
     private static BufferedImage toBuffer(Image image) {
         if (image instanceof BufferedImage) {
             return (BufferedImage) image;
