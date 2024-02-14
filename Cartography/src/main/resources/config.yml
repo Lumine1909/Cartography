@@ -1,8 +1,0 @@
-max-length: 4
-max-width: 4
-cool-down: 30000 #in millisecond
-max-timeout: 10000 #in millisecond
-#If enable this, the map will appear positive when the player places it in the itemframe.
-map-frame-fix: true
-#If enable this, the map generation info will be saved to log, also helpful for "MapManager".
-enable-log: true
