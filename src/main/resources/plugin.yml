@@ -1,0 +1,20 @@
+name: Cartography
+version: 3.1.1
+main: io.github.lumine1909.cartography.Cartography
+api-version: 1.21
+authors:
+  - Lumine1909
+commands:
+  getimage:
+    permission: cartography.getimage
+  getmap:
+    permission: cartography.getmap
+permissions:
+  cartography.getimage:
+    default: true
+  cartography.getmap:
+    default: op
+  cartography.bypasscd:
+    default: op
+  cartography.bypassmax:
+    default: op
