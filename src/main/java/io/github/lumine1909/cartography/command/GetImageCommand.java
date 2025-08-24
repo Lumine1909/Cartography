@@ -16,8 +16,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import static io.github.lumine1909.cartography.Cartography.mapCoolDown;
-import static io.github.lumine1909.cartography.Cartography.plugin;
+import static io.github.lumine1909.cartography.Cartography.*;
 
 public class GetImageCommand implements TabExecutor {
 
@@ -33,7 +32,7 @@ public class GetImageCommand implements TabExecutor {
         }
         try {
             Argument argument = Argument.fromCommandArgs(args);
-            if (argument.length() * argument.width() > Cartography.MAX_SIZE && !player.hasPermission("cartography.bypassmax")) {
+            if (!checkSize(argument.length() * argument.width(), player)) {
                 player.sendMessage(ChatColor.RED + "地图画过大, 最大限制总张数为: " + Cartography.MAX_SIZE);
                 return true;
             }

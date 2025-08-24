@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
 
+import static io.github.lumine1909.cartography.Cartography.checkSize;
 import static io.github.lumine1909.cartography.processor.ImageProcessor.*;
 import static io.github.lumine1909.cartography.util.GeometryUtil.getPhase;
 
@@ -31,6 +32,9 @@ public class CompressMapOutlineRender {
             length = container.get(keyLength, PersistentDataType.INTEGER);
             width = container.get(keyWidth, PersistentDataType.INTEGER);
         } catch (Exception e) {
+            return;
+        }
+        if (!checkSize(length * width, player)) {
             return;
         }
         Block block = player.getTargetBlockExact(5);

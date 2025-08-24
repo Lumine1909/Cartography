@@ -22,6 +22,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
+import static io.github.lumine1909.cartography.Cartography.checkSize;
 import static io.github.lumine1909.cartography.processor.ImageProcessor.*;
 import static io.github.lumine1909.cartography.util.GeometryUtil.getPhase;
 import static io.github.lumine1909.cartography.util.GeometryUtil.getRotation;
@@ -74,6 +75,9 @@ public class EventListener implements Listener {
             length = container.get(keyLength, PersistentDataType.INTEGER);
             width = container.get(keyWidth, PersistentDataType.INTEGER);
         } catch (Exception e) {
+            return;
+        }
+        if (!checkSize(length * width, player)) {
             return;
         }
 

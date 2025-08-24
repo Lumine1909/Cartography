@@ -53,4 +53,8 @@ public class Cartography extends JavaPlugin {
     public void onDisable() {
         storage.close();
     }
+
+    public static boolean checkSize(int size, Player player) {
+        return size <= Cartography.MAX_SIZE || player.hasPermission("cartography.bypassmax");
+    }
 }
