@@ -71,10 +71,14 @@ public class ImageProcessor {
 
     public static void process(String url, Player player, Argument argument) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            if (argument.noCache()) {
-                CREATE_PIPELINE.process(url, new CommandContext(player, argument));
-            } else {
-                LOAD_PIPELINE.process(argument, new CommandContext(player, argument));
+            try {
+                if (argument.noCache()) {
+                    CREATE_PIPELINE.process(url, new CommandContext(player, argument));
+                } else {
+                    LOAD_PIPELINE.process(argument, new CommandContext(player, argument));
+                }
+            } catch (Exception e) {
+                player.sendMessage(Component.text("生成图片 " + url + " 失败, 请检查该url是否正确或联系管理员!", NamedTextColor.RED));
             }
         });
     }
