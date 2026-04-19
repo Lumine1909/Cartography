@@ -1,7 +1,7 @@
-name: Cartography
-version: 3.1.1
+name: $name
+version: $version
 main: io.github.lumine1909.cartography.Cartography
-api-version: 1.21
+api-version: $apiVersion
 authors:
   - Lumine1909
 commands:

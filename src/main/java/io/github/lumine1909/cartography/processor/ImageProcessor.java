@@ -3,6 +3,7 @@ package io.github.lumine1909.cartography.processor;
 import io.github.lumine1909.cartography.command.Argument;
 import io.github.lumine1909.cartography.command.CommandContext;
 import io.github.lumine1909.cartography.util.ImageUtil;
+import io.github.lumine1909.reflexion.Field;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.datacomponent.item.MapId;
@@ -27,7 +28,6 @@ import org.bukkit.persistence.PersistentDataType;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
@@ -58,16 +58,7 @@ public class ImageProcessor {
 
     private static final Processor<Argument, Void> LOAD_PIPELINE = loadOrFetch().then(ITEM_PIPELINE);
 
-    private static final Field field$worldMap;
-
-    static {
-        try {
-            field$worldMap = CraftMapView.class.getDeclaredField("worldMap");
-            field$worldMap.setAccessible(true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+    private static final Field<MapItemSavedData> field$worldMap = Field.of(CraftMapView.class, "worldMap");
 
     public static void process(String url, Player player, Argument argument) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
@@ -257,12 +248,8 @@ public class ImageProcessor {
         view.setScale(MapView.Scale.CLOSEST);
         view.setLocked(true);
 
-        MapItemSavedData nmsMap;
-        try {
-            nmsMap = (MapItemSavedData) field$worldMap.get(view);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        MapItemSavedData nmsMap = field$worldMap.get(view);
+
         for (int x = 0; x < 128; x++) {
             for (int y = 0; y < 128; y++) {
                 nmsMap.setColor(x, y, MapPalette.matchColor(new Color(img.getRGB(x, y), true)));
